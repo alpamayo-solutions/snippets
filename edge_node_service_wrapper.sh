@@ -25,6 +25,10 @@ publish_service_details() {
     echo "ERROR: SERVICE_HIERARCHY is required but not set"
     exit 1
   fi
+
+  if [ -z "$SERVICE_METADATA" ]; then
+    SERVICE_METADATA="{}"
+  fi
   
   MQTT_IP=${MQTT_IP:-"broker"}
   MQTT_USERNAME=${MQTT_USERNAME}
@@ -35,7 +39,7 @@ publish_service_details() {
   "id": "$SERVICE_ID",
   "display_name": "$SERVICE_DISPLAY_NAME",
   "version": "$SERVICE_VERSION",
-  "metadata": {},
+  "metadata": $SERVICE_METADATA,
   "service_type": "$SERVICE_TYPE",
   "hierarchy": $SERVICE_HIERARCHY
 }
