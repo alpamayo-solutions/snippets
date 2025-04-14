@@ -61,4 +61,7 @@ publish_service_details
 # Execute the command passed as arguments
 if [ "$1" != "&&" ]; then
   exec "$@"
+else
+  echo "Skipping exec: command starts with '&&'"
 fi
+
