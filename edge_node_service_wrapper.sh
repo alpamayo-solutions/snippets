@@ -59,4 +59,6 @@ EOF
 publish_service_details
 
 # Execute the command passed as arguments
-exec "$@"
+if [ "$1" != "&&" ]; then
+  exec "$@"
+fi
