@@ -34,11 +34,12 @@ publish_service_details() {
   MQTT_PORT=${MQTT_PORT:-1883}
   MQTT_USERNAME=${MQTT_USERNAME}
   MQTT_PASSWORD=${MQTT_PASSWORD}
+  USE_SSL=${USE_SSL:-false}
 
-  # TLS paths (optional — only used if certs are provided)
-  TLS_CERT_FILE=${TLS_CERT_FILE}
-  TLS_KEY_FILE=${TLS_KEY_FILE}
-  CA_CERT_FILE=${CA_CERT_FILE}
+  # TLS paths (only used if USE_SSL=true)
+  TLS_CERT_FILE=${TLS_CERT_FILE:-/etc/certs/service.pem}
+  TLS_KEY_FILE=${TLS_KEY_FILE:-/etc/certs/service.key}
+  CA_CERT_FILE=${CA_CERT_FILE:-/etc/ca/ca.crt}
 
   JSON_PAYLOAD=$(cat <<EOF
 {
@@ -54,20 +55,30 @@ EOF
 
   echo "Publishing service details for $SERVICE_DISPLAY_NAME to MQTT broker at $MQTT_IP:$MQTT_PORT..."
 
-  # Base mosquitto_pub command
+  # Compose base command
   CMD="mosquitto_pub -h \"$MQTT_IP\" -p \"$MQTT_PORT\" -u \"$MQTT_USERNAME\" -P \"$MQTT_PASSWORD\" -t \"alp/v1/_ServiceDetails/$SERVICE_ID\" -m '$JSON_PAYLOAD' -r"
 
-  # If TLS certs are defined, add them
-  if [ -n "$TLS_CERT_FILE" ] && [ -n "$TLS_KEY_FILE" ] && [ -n "$CA_CERT_FILE" ]; then
-    echo "🔒 Using TLS client authentication"
+  if [ "$USE_SSL" = "true" ]; then
+    echo "🔐 USE_SSL=true — TLS client authentication required"
+
+    # Check file presence
+    for f in "$TLS_CERT_FILE" "$TLS_KEY_FILE" "$CA_CERT_FILE"; do
+      if [ ! -f "$f" ]; then
+        echo "❌ ERROR: Required TLS file '$f' not found!"
+        exit 1
+      fi
+    done
+
+    # Update port and add TLS options
+    MQTT_PORT=8883
     CMD="$CMD --cafile \"$CA_CERT_FILE\" --cert \"$TLS_CERT_FILE\" --key \"$TLS_KEY_FILE\""
   else
-    echo "⚠️  Not using TLS — MQTT traffic is unencrypted"
+    echo "⚠️  USE_SSL=false — MQTT traffic is unencrypted"
   fi
 
-  # Eval and execute
+  # Execute
   if ! eval $CMD; then
-    echo "ERROR: Failed to publish service details to MQTT broker"
+    echo "❌ ERROR: Failed to publish service details to MQTT broker"
     exit 1
   fi
 
