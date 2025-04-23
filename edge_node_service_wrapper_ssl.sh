@@ -31,15 +31,24 @@ publish_service_details() {
   fi
 
   MQTT_IP=${MQTT_IP:-"broker"}
-  MQTT_PORT=${MQTT_PORT:-1883}
-  MQTT_USERNAME=${MQTT_USERNAME}
-  MQTT_PASSWORD=${MQTT_PASSWORD}
   USE_SSL=${USE_SSL:-false}
 
   # TLS paths (only used if USE_SSL=true)
   TLS_CERT_FILE=${TLS_CERT_FILE:-/etc/certs/service.pem}
   TLS_KEY_FILE=${TLS_KEY_FILE:-/etc/certs/service.key}
   CA_CERT_FILE=${CA_CERT_FILE:-/etc/ca/ca.crt}
+
+  # If MQTT_PORT is explicitly set, keep it. Otherwise pick 8883 for SSL, 1883 for plain.
+  if [ -z "$MQTT_PORT" ]; then
+    if [ "$USE_SSL" = "true" ]; then
+      MQTT_PORT=8883
+    else
+      MQTT_PORT=1883
+    fi
+  fi
+
+  MQTT_USERNAME=${MQTT_USERNAME}
+  MQTT_PASSWORD=${MQTT_PASSWORD}
 
   JSON_PAYLOAD=$(cat <<EOF
 {
@@ -69,8 +78,7 @@ EOF
       fi
     done
 
-    # Update port and add TLS options
-    MQTT_PORT=8883
+    # Add TLS options
     CMD="$CMD --cafile \"$CA_CERT_FILE\" --cert \"$TLS_CERT_FILE\" --key \"$TLS_KEY_FILE\""
   else
     echo "⚠️  USE_SSL=false — MQTT traffic is unencrypted"
