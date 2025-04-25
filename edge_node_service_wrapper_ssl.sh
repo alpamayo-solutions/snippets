@@ -33,10 +33,6 @@ publish_service_details() {
   MQTT_IP=${MQTT_IP:-"broker"}
   USE_SSL=${USE_SSL:-false}
 
-  # TLS paths (only used if USE_SSL=true)
-  TLS_CERT_FILE=${TLS_CERT_FILE:-/etc/certs/service.pem}
-  TLS_KEY_FILE=${TLS_KEY_FILE:-/etc/certs/service.key}
-  CA_CERT_FILE=${CA_CERT_FILE:-/etc/ca/ca.crt}
 
   # If MQTT_PORT is explicitly set, keep it. Otherwise pick 8883 for SSL, 1883 for plain.
   if [ -z "$MQTT_PORT" ]; then
@@ -69,6 +65,10 @@ EOF
 
   if [ "$USE_SSL" = "true" ]; then
     echo "🔐 USE_SSL=true — TLS client authentication required"
+
+    TLS_CERT_FILE=${TLS_CERT_FILE:-/etc/certs/service.pem}
+    TLS_KEY_FILE=${TLS_KEY_FILE:-/etc/certs/service.key}
+    CA_CERT_FILE=${CA_CERT_FILE:-/etc/ca/ca.crt}
 
     # Check file presence
     for f in "$TLS_CERT_FILE" "$TLS_KEY_FILE" "$CA_CERT_FILE"; do
